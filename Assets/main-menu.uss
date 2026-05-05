@@ -1,0 +1,64 @@
+.panel {
+    -unity-background-image-tint-color: rgb(43, 140, 57);
+    align-items: center;
+    align-self: auto;
+    justify-content: flex-start;
+    width: auto;
+    min-height: auto;
+    min-width: auto;
+}
+
+.hide {
+    display: none;
+}
+
+.menu {
+    width: 437px;
+    min-height: auto;
+    height: 800px;
+    align-content: auto;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    border-left-color: rgb(141, 185, 162);
+    border-right-color: rgb(141, 185, 162);
+    border-top-color: rgb(141, 185, 162);
+    border-bottom-color: rgb(141, 185, 162);
+}
+
+.unity-button {
+    flex-grow: 1;
+    flex-shrink: 1;
+    align-items: center;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+    align-content: auto;
+    margin-top: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    -unity-text-align: middle-center;
+    border-top-left-radius: 50px;
+    border-top-right-radius: 50px;
+    border-bottom-right-radius: 50px;
+    border-bottom-left-radius: 50px;
+    border-top-width: 5px;
+    border-right-width: 5px;
+    border-bottom-width: 5px;
+    border-left-width: 5px;
+    background-color: rgb(112, 207, 182);
+    border-left-color: rgb(28, 94, 28);
+    border-right-color: rgb(28, 94, 28);
+    border-top-color: rgb(28, 94, 28);
+    border-bottom-color: rgb(28, 94, 28);
+}
+
+.unity-button:hover {
+    background-color: rgb(183, 172, 54);
+    scale: 1.1 1.1 1.1;
+}

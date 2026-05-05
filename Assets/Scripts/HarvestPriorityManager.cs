@@ -40,6 +40,13 @@ public class HarvestPriorityManager : MonoBehaviour
 
         if (priorityNodes.Count == 0) return;
 
+        Vector3 basePos = SceneManager.Instance.GetBasePosition();
+        priorityNodes.Sort((a, b) => {
+            float distA = Vector3.Distance(a.transform.position, basePos);
+            float distB = Vector3.Distance(b.transform.position, basePos);
+            return distA.CompareTo(distB);
+        });
+
         TruckUnit[] allTrucks = FindObjectsByType<TruckUnit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         foreach (var pNode in priorityNodes)

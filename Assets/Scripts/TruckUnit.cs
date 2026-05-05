@@ -21,11 +21,14 @@ public class TruckUnit : MonoBehaviour
     public bool IsCarryingNothing { get { return currentCargo == 0; } }
     public ResourceNode TargetResource { get { return targetResource; } }
 
+    private TextMesh infoTextMesh;
+
     void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         agent.radius = 1f;
         agent.height = 2f;
+        agent.speed = GameSettings.truckSpeed;
         
         lineRenderer = GetComponent<LineRenderer>();
         lineRenderer.startWidth = 0.2f;
@@ -33,31 +36,65 @@ public class TruckUnit : MonoBehaviour
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
         lineRenderer.startColor = Color.yellow;
         lineRenderer.endColor = Color.yellow;
+
+        GameObject textObj = new GameObject("TruckInfoText");
+        textObj.transform.SetParent(transform);
+        textObj.transform.localPosition = new Vector3(0, 3, 0);
+        infoTextMesh = textObj.AddComponent<TextMesh>();
+        infoTextMesh.characterSize = 0.25f;
+        infoTextMesh.anchor = TextAnchor.MiddleCenter;
+        infoTextMesh.alignment = TextAlignment.Center;
+        infoTextMesh.color = Color.white;
     }
 
     void Update()
     {
         UpdatePathVisualization();
 
+        if (infoTextMesh != null)
+        {
+            if (Camera.main != null) {
+                infoTextMesh.transform.rotation = Camera.main.transform.rotation;
+            }
+
+            string info = $"{currentCargoType} {currentCargo}/{capacity}";
+            
+            if (agent.hasPath && agent.velocity.sqrMagnitude > 0.1f) {
+                float dist = agent.remainingDistance;
+                float speed = agent.velocity.magnitude;
+                float eta = dist / speed;
+                info += $"\nETA: {eta:F1}s";
+            }
+            infoTextMesh.text = info;
+        }
+
         switch (currentState)
         {
             case State.MovingToResource:
-                if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+                if (targetResource != null && targetResource.gameObject.activeSelf)
                 {
-                    if (targetResource != null && targetResource.gameObject.activeSelf)
+                    float distToResource = Vector3.Distance(transform.position, targetResource.transform.position);
+                    if (!agent.pathPending && distToResource <= 4f)
                     {
+                        agent.ResetPath();
                         StartCoroutine(GatherRoutine());
                     }
-                    else
-                    {
-                        currentState = State.Idle;
-                        if (HarvestPriorityManager.Instance != null) HarvestPriorityManager.Instance.OptimizeHarvesting();
-                    }
+                }
+                else
+                {
+                    agent.ResetPath();
+                    currentState = State.Idle;
+                    if (HarvestPriorityManager.Instance != null) HarvestPriorityManager.Instance.OptimizeHarvesting();
                 }
                 break;
             case State.MovingToBase:
-                float distToBase = Vector3.Distance(transform.position, SceneManager.Instance.GetBasePosition());
-                if (!agent.pathPending && distToBase <= SceneManager.Instance.BaseRadius + 1f)
+                Vector3 basePos = SceneManager.Instance.GetBasePosition();
+                if ((agent.destination - basePos).sqrMagnitude > 4f) {
+                    agent.SetDestination(basePos);
+                }
+
+                float distToBase = Vector3.Distance(transform.position, basePos);
+                if (!agent.pathPending && distToBase <= 15f)
                 {
                     agent.ResetPath();
                     StartCoroutine(UnloadRoutine());
@@ -71,6 +108,13 @@ public class TruckUnit : MonoBehaviour
         targetResource = null;
         agent.SetDestination(destination);
         currentState = State.Idle;
+    }
+
+    public void CommandReturnToBase()
+    {
+        targetResource = null;
+        agent.SetDestination(SceneManager.Instance.GetBasePosition());
+        currentState = State.MovingToBase;
     }
 
     public void CheckForAutoGather() {
@@ -147,15 +191,16 @@ public class TruckUnit : MonoBehaviour
         SceneManager.Instance.DepositResources(currentCargoType, currentCargo);
         currentCargo = 0;
 
-        if (targetResource != null && targetResource.amount > 0 && targetResource.gameObject.activeSelf)
+        currentState = State.Idle;
+        
+        if (HarvestPriorityManager.Instance != null) {
+            HarvestPriorityManager.Instance.OptimizeHarvesting();
+        }
+
+        if (currentState == State.Idle && targetResource != null && targetResource.amount > 0 && targetResource.gameObject.activeSelf)
         {
             agent.SetDestination(targetResource.transform.position);
             currentState = State.MovingToResource;
-        }
-        else
-        {
-            currentState = State.Idle;
-            if (HarvestPriorityManager.Instance != null) HarvestPriorityManager.Instance.OptimizeHarvesting();
         }
     }
 

@@ -35,13 +35,19 @@ public class ResourceNode : MonoBehaviour
         }
     }
 
+    private void Update() {
+        if (textMesh != null && Camera.main != null) {
+            textMesh.transform.rotation = Camera.main.transform.rotation;
+        }
+    }
+
     public int Gather(int requestedAmount) {
         int gathered = Mathf.Min(requestedAmount, amount);
         amount -= gathered;
-        UpdateText();
-        
         if (amount <= 0) {
-            gameObject.SetActive(false);
+            Destroy(gameObject);
+        } else {
+            UpdateText();
         }
         
         return gathered;

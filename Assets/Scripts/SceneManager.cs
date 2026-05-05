@@ -11,6 +11,12 @@ public struct ResourceData {
     public GameObject prefab;
 }
 
+public class BuildTask {
+    public UnitType type;
+    public float startTime;
+    public float duration;
+}
+
 public class SceneManager : MonoBehaviour
 {
     public static SceneManager Instance;
@@ -32,10 +38,13 @@ public class SceneManager : MonoBehaviour
 
     private Dictionary<ResourceType, int> baseStock = new Dictionary<ResourceType, int>();
     public const int MaxBaseCapacity = 100000;
+    
+    public List<BuildTask> activeBuilds = new List<BuildTask>();
+    public bool isPaused = false;
+    public bool isGameActive = false;
 
     private void Awake() {
         Instance = this;
-        // Also ensure PlayerController exists in scene
         if (FindAnyObjectByType<PlayerController>() == null) {
             gameObject.AddComponent<PlayerController>();
         }
@@ -47,13 +56,31 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    private void Start() {
+    public void StartGameEnvironment() {
+        isGameActive = true;
+        resourcesPerType = GameSettings.resourcesPerType;
+
+        baseStock[ResourceType.Metal] = GameSettings.initialMetal;
+        baseStock[ResourceType.Crystal] = GameSettings.initialCrystal;
+        baseStock[ResourceType.Fuel] = GameSettings.initialFuel;
+
         InitializeResources();
-        SpawnUnit(UnitType.Drone);
-        SpawnUnit(UnitType.Truck);
+        
+        for (int i = 0; i < GameSettings.initialDrones; i++) SpawnUnit(UnitType.Drone);
+        for (int i = 0; i < GameSettings.initialTrucks; i++) SpawnUnit(UnitType.Truck);
     }
 
-    // Task Requirement: Randomly place resource markers
+    private void Update() {
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame) {
+            TogglePause();
+        }
+    }
+
+    public void TogglePause() {
+        isPaused = !isPaused;
+        Time.timeScale = isPaused ? 0f : 1f;
+    }
+
     private void InitializeResources() {
         foreach (var resource in resourcePrefabs) {
             baseStock[resource.type] = 0;
@@ -68,9 +95,8 @@ public class SceneManager : MonoBehaviour
                         0,
                         Random.Range(-mapBounds.y, mapBounds.y)
                     );
-                    randomPos.y = 0.5f; // Slightly above ground
+                    randomPos.y = 0.5f;
                     
-                    // Elevate sphere slightly to avoid triggering on a flat ground plane at y=0
                     if (!Physics.CheckSphere(randomPos + Vector3.up * 2f, 1.9f)) {
                         validPos = true;
                     }
@@ -78,14 +104,15 @@ public class SceneManager : MonoBehaviour
                 }
                 
                 GameObject res = Instantiate(resource.prefab, randomPos, Quaternion.identity);
-                ResourceNode node = res.AddComponent<ResourceNode>();
+                ResourceNode node = res.GetComponent<ResourceNode>();
+                if (node == null) {
+                    node = res.AddComponent<ResourceNode>();
+                }
                 node.type = resource.type;
-                // Initially hide resources or mark as "unscanned"
+                node.UpdateText();
                 res.SetActive(false); 
             }
         }
-        
-        // Remove call from here since it's a manual ping now
     }
 
     public void RevealNearestResourceHints() {
@@ -128,7 +155,6 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    // Task Requirement: Spawn units at specific locations
     public void SpawnUnit(UnitType type) {
         if (type == UnitType.Drone) {
             if (dronePrefab != null) {
@@ -193,27 +219,10 @@ public class SceneManager : MonoBehaviour
     }
 
     private System.Collections.IEnumerator BuildRoutine(UnitType type, float time) {
+        BuildTask task = new BuildTask { type = type, startTime = Time.time, duration = time };
+        activeBuilds.Add(task);
         yield return new WaitForSeconds(time);
+        activeBuilds.Remove(task);
         SpawnUnit(type);
-    }
-
-    private void OnGUI() {
-        GUI.color = Color.white;
-        GUILayout.BeginArea(new Rect(10, 10, 200, 300));
-        
-        // Background box for visibility
-        GUIStyle style = new GUIStyle(GUI.skin.box);
-        style.normal.background = Texture2D.whiteTexture; // A simple background
-        GUI.color = new Color(0, 0, 0, 0.7f);
-        GUILayout.BeginVertical("box");
-        GUI.color = Color.white;
-
-        GUILayout.Label("<b>Base Inventory</b>");
-        GUILayout.Label($"Max Capacity: {MaxBaseCapacity}");
-        foreach (var kvp in baseStock) {
-            GUILayout.Label($"{kvp.Key}: {kvp.Value}");
-        }
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
     }
 }

@@ -126,10 +126,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2df6ca0df98e4e47b310b51d2e34eb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneUnit
-  speed: 10
-  scanAngle: 60
-  maxScanDistance: 30
+  speed: 20
+  scanAngle: 120
+  maxScanDistance: 50
   hoverHeight: 10
+  scanDuration: 5
+  scanCircleRadius: 5
+  scanCircleSpeed: 3
 --- !u!120 &1814328478088864500
 LineRenderer:
   serializedVersion: 3

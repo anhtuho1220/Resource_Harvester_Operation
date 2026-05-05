@@ -4,7 +4,7 @@ using System.Collections;
 [RequireComponent(typeof(LineRenderer))]
 public class DroneUnit : MonoBehaviour
 {
-    public float speed = 10f;
+    public float speed = 20f;
     public float scanAngle = 60f; 
     public float maxScanDistance = 30f;
     public float hoverHeight = 10f;
@@ -17,8 +17,11 @@ public class DroneUnit : MonoBehaviour
     private LineRenderer lineRenderer;
     private Light scanLight;
 
+    public bool IsIdle { get { return !isMoving && !scanLight.enabled; } }
+
     void Awake()
     {
+        speed = GameSettings.droneSpeed;
         targetPosition = transform.position;
         lineRenderer = GetComponent<LineRenderer>();
         lineRenderer.startWidth = 0.1f;
